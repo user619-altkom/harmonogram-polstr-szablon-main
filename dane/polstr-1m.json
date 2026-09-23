@@ -1,0 +1,26 @@
+{
+  "wskaznik": "POLSTR 1M",
+  "opis": "POLSTR 1M Stopa Składana, administrator GPW Benchmark. Wartość obowiązująca od dnia 'od' do dnia przed kolejnym wpisem. Po ostatnim wpisie obowiązuje ostatnia znana wartość. Publikacja wskaźnika od 2 czerwca 2025, dlatego seria jest krótka.",
+  "uwaga": "wartości ilustracyjne do ćwiczeń, nie do celów komercyjnych. Przebieg serii jest przybliżony: jedyna wartość rzeczywista to 3,55472 % z 4.09.2026 (wpis 2026-09-01), pozostałe odtwarzają tylko ogólny trend spadkowy od ok. 4,9 % w lipcu 2025.",
+  "zrodla": [
+    "https://gpwbenchmark.pl/wartosci_i_statystyki",
+    "https://www.gpwbenchmark.pl/aktualnosci_czytaj?cmn_id=2559"
+  ],
+  "wartosci": [
+    { "od": "2025-07-01", "stopa": 0.0490 },
+    { "od": "2025-08-01", "stopa": 0.0478 },
+    { "od": "2025-09-01", "stopa": 0.0465 },
+    { "od": "2025-10-01", "stopa": 0.0452 },
+    { "od": "2025-11-01", "stopa": 0.0440 },
+    { "od": "2025-12-01", "stopa": 0.0428 },
+    { "od": "2026-01-01", "stopa": 0.0415 },
+    { "od": "2026-02-01", "stopa": 0.0402 },
+    { "od": "2026-03-01", "stopa": 0.0390 },
+    { "od": "2026-04-01", "stopa": 0.0378 },
+    { "od": "2026-05-01", "stopa": 0.0368 },
+    { "od": "2026-06-01", "stopa": 0.0360 },
+    { "od": "2026-07-01", "stopa": 0.0357 },
+    { "od": "2026-08-01", "stopa": 0.0356 },
+    { "od": "2026-09-01", "stopa": 0.0355472 }
+  ]
+}
