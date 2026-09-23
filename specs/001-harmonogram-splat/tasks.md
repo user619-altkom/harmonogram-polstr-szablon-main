@@ -37,11 +37,11 @@ Brak zadań w tej fazie.
 **Purpose**: Typy i pomocnicze funkcje współdzielone przez wszystkie historie użytkownika. Musi być
 ukończona przed rozpoczęciem Phase 3.
 
-- [ ] T001 Rozszerzyć `src/domena/harmonogram.ts` o typy `WierszHarmonogramu` (`numer`, `data`,
+- [X] T001 Rozszerzyć `src/domena/harmonogram.ts` o typy `WierszHarmonogramu` (`numer`, `data`,
   `kapitalGr`, `odsetkiGr`, `rataGr`, `saldoPoGr` — wszystkie kwoty jako liczby całkowite w groszach)
   i `WynikHarmonogramu` (`raty: WierszHarmonogramu[]`, `sumaOdsetekGr: number`), zgodnie z
   `data-model.md`
-- [ ] T002 [P] Dodać w `src/domena/harmonogram.ts` funkcję pomocniczą liczącą oprocentowanie okresu
+- [X] T002 [P] Dodać w `src/domena/harmonogram.ts` funkcję pomocniczą liczącą oprocentowanie okresu
   jako `wartość wskaźnika za dany okres + marża`, korzystającą z `seriaWskaznika` z
   `src/dane/wskazniki.ts` (FR-003)
 
@@ -58,18 +58,18 @@ z ratą wyrównującą na końcu.
 stałej wartości 3,55% podanej wprost (nie z pliku) i marży 2,11 pp musi dać pierwszą ratę 2 494,72 zł
 (tolerancja ±0,05 zł) i ostatnią ratę wyrównującą 2 492,53 zł.
 
-- [ ] T003 [P] [US1] Napisać test w `tests/harmonogram.test.ts`: dla kwoty `40_000_000` gr, 300 rat
+- [X] T003 [P] [US1] Napisać test w `tests/harmonogram.test.ts`: dla kwoty `40_000_000` gr, 300 rat
   równych, stopy wskaźnika podanej wprost jako stała `0.0355` i marży `0.0211`, `policzHarmonogram`
   MUSI zwrócić pierwszą ratę `249472` gr (tolerancja ±5 gr) i ostatnią ratę wyrównującą `249253` gr —
   liczba kontrolna z BRIEF.md (SC-001)
-- [ ] T004 [P] [US1] Napisać test w `tests/harmonogram.test.ts`: dla dowolnych poprawnych parametrów
+- [X] T004 [P] [US1] Napisać test w `tests/harmonogram.test.ts`: dla dowolnych poprawnych parametrów
   rat równych suma pola `kapitalGr` wszystkich wierszy `raty` MUSI być równa `kwotaGr` (SC-002, FR-008)
-- [ ] T005 [US1] Zaimplementować w `src/domena/harmonogram.ts` gałąź `typRat === 'rowne'` metodą
+- [X] T005 [US1] Zaimplementować w `src/domena/harmonogram.ts` gałąź `typRat === 'rowne'` metodą
   annuitetową na stałej stopie: rata = `kwotaGr × stopaMiesieczna / (1 − (1 + stopaMiesieczna)^−liczbaRat)`,
   część kapitałowa i odsetkowa liczona wg reguły „odsetki okresu = saldo × stopa roczna / 12” (FR-006),
   zaokrąglanie części kapitałowej do grosza w jednym miejscu (FR-007), ostatnia rata dopełnia różnicę
   tak, aby suma części kapitałowych była równa `kwotaGr` (FR-008)
-- [ ] T006 [US1] Uruchomić `npm test` i potwierdzić, że testy z T003–T004 przechodzą na zielono
+- [X] T006 [US1] Uruchomić `npm test` i potwierdzić, że testy z T003–T004 przechodzą na zielono
 
 **Checkpoint**: User Story 1 działa niezależnie — MVP gotowe do review i scalenia.
 
