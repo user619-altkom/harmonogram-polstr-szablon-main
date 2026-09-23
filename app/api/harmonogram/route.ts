@@ -41,7 +41,17 @@ export function GET(request: Request) {
 
   try {
     const harmonogram = policzHarmonogram(parametry);
-    return NextResponse.json(harmonogram);
+    return NextResponse.json({
+      raty: harmonogram.raty.map((wiersz) => ({
+        numer: wiersz.numer,
+        data: wiersz.data,
+        kapital: wiersz.kapitalGr / 100,
+        odsetki: wiersz.odsetkiGr / 100,
+        rata: wiersz.rataGr / 100,
+        saldoPo: wiersz.saldoPoGr / 100,
+      })),
+      sumaOdsetek: harmonogram.sumaOdsetekGr / 100,
+    });
   } catch (blad) {
     const komunikat = blad instanceof Error ? blad.message : String(blad);
     if (komunikat.startsWith('nie zaimplementowano')) {
