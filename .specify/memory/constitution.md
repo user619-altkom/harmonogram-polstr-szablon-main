@@ -1,50 +1,99 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+Wersja: brak → 1.0.0
+Typ zmiany: MAJOR (pierwsza ratyfikacja, ustanowienie wszystkich zasad)
+Zmodyfikowane zasady: brak (nowy dokument)
+Dodane sekcje:
+  - I. Architektura Next.js z czystą domeną
+  - II. TypeScript strict bez ucieczek
+  - III. Test-First (NON-NEGOTIABLE)
+  - IV. Tailwind jako jedyna warstwa stylów
+  - V. Precyzja kwot pieniężnych
+  - VI. Język polski w dokumentacji i commitach
+  - Ograniczenia techniczne i zależności
+  - Proces pracy i przeglądu
+  - Governance
+Usunięte sekcje: brak
+Odroczone TODO: brak
+Uwaga: ta notatka jest materiałem roboczym do przeglądu i powinna zostać usunięta przed commitem finalnej wersji konstytucji.
+-->
+
+# Harmonogram POLSTR Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Architektura Next.js z czystą domeną
+Projekt używa Next.js App Router z TypeScript. Cała logika obliczeniowa (harmonogram spłat,
+raty, oprocentowanie) MUSI mieszkać w `src/domena/` jako czyste funkcje: bez importów React,
+bez wywołań I/O, bez odczytu czasu systemowego (`Date.now()` i podobne). Dane wskaźników
+MUSZĄ być wczytywane w `src/dane/` z plików `dane/*.json` przez import. Route handlery
+(np. `app/api/harmonogram/route.ts`) MUSZĄ pozostać cienkie: parsują parametry, wołają
+domenę, zwracają JSON, bez własnej logiki obliczeniowej. Rationale: rozdzielenie czystej
+logiki od warstwy sieciowej i UI pozwala testować domenę bez frameworka i bez mocków I/O.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. TypeScript strict bez ucieczek
+Kod MUSI być zgodny z `tsconfig.json` w trybie strict. Użycie `any` oraz `@ts-ignore` jest
+zabronione. Jeśli typowanie wydaje się niemożliwe bez nich, należy przeprojektować typ lub
+zapytać, zanim zostanie dodany wyjątek. Rationale: silne typowanie zapobiega błędom w
+obliczeniach finansowych, gdzie pomyłka typu jest kosztowna.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Test-First (NON-NEGOTIABLE)
+Dla logiki domenowej i danych obowiązuje TDD: najpierw pisany jest test w `tests/` z
+oczekiwanym wynikiem (liczbą kontrolną), dopiero potem implementacja. Test MUSI czerwienić
+się przed napisaniem kodu. Testy vitest obejmują wyłącznie `src/domena/` i `src/dane/` — nie
+testujemy przez nie UI ani route handlerów. Każda zmiana logiki obliczeń MUSI mieć
+towarzyszący test z liczbą kontrolną. Rationale: obliczenia finansowe wymagają
+weryfikowalnej poprawności, a TDD wymusza tę weryfikację przed napisaniem kodu.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Tailwind jako jedyna warstwa stylów
+Ekrany (`app/page.tsx` i pochodne) używają wyłącznie Tailwind do stylowania. Nie wprowadza
+się bibliotek komponentów UI (np. MUI, Chakra, Ant Design). Rationale: szablon zakłada
+minimalny, kontrolowany zestaw zależności frontendowych.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Precyzja kwot pieniężnych
+Kwoty pieniężne MUSZĄ być reprezentowane w groszach jako liczby całkowite, albo — jeśli
+używane są liczby zmiennoprzecinkowe — miejsce i sposób zaokrąglania MUSI być jawnie
+udokumentowane i zaokrąglanie MUSI następować w dokładnie jednym miejscu w kodzie.
+Rationale: rozproszone zaokrąglenia w obliczeniach finansowych prowadzą do niespójnych
+wyników między ratami.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### VI. Język polski w dokumentacji i commitach
+Dokumenty, komentarze w kodzie, nazwy domenowe i komunikaty commitów MUSZĄ być po polsku,
+bez skracania nazw domenowych (np. `rataKapitalowa`, nie `rk`). Komunikaty commitów są
+jednolinijkowe i opisowe. Rationale: spójność językowa ułatwia review i utrzymanie w
+zespole posługującym się polskim jako językiem roboczym.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+## Ograniczenia techniczne i zależności
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Nie dodaje się nowych zależności (pakietów npm) bez wyraźnego uzasadnienia. Jeśli zależność
+wydaje się potrzebna, PR MUSI zawierać jednozdaniowe uzasadnienie, a decyzja o jej dodaniu
+czeka na potwierdzenie przed scaleniem. Pliki w `dane/` nie są edytowane bez wyraźnego
+polecenia, ponieważ testy wczytują je jako dane referencyjne. Katalogi `.specify/` i
+`.github/skills/` nie są edytowane poza tym, co robią oficjalne skille spec-kit.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## Proces pracy i przeglądu
+
+Praca odbywa się w małych commitach, jeden PR na fazę zdefiniowaną w `tasks.md`. Po
+zakończeniu fazy praca zatrzymuje się do przeglądu diffu; kolejna faza nie zaczyna się bez
+wyraźnego polecenia. Przed zgłoszeniem gotowości PR-u MUSZĄ przejść lokalnie: `npm test`,
+`npm run typecheck` i `npm run build` — środowisko wdrożeniowe (Vercel) buduje produkcję tym
+samym `next build`, więc czerwony build lokalny oznacza czerwony deploy. Reguły review dla
+plików `.ts`/`.tsx` są zdefiniowane w `.github/instructions/review.instructions.md` i
+obowiązują przy każdym code review.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+Ta konstytucja ma pierwszeństwo przed innymi praktykami i szablonami w tym repozytorium.
+Każda poprawka wymaga: opisu zmiany, aktualizacji numeru wersji zgodnie z zasadami
+semantycznego wersjonowania poniżej oraz zaktualizowania daty ostatniej zmiany.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Wersjonowanie:
+- MAJOR: usunięcie lub redefinicja zasady w sposób niekompatybilny wstecznie.
+- MINOR: dodanie nowej zasady lub istotne rozszerzenie wytycznych.
+- PATCH: doprecyzowania, poprawki językowe, zmiany niesemantyczne.
+
+Zgodność z konstytucją jest weryfikowana przy każdym code review i przy planowaniu fazy
+(`/speckit-plan`, `/speckit-tasks`). Odstępstwa muszą być uzasadnione w PR; w razie
+wątpliwości należy zapytać zamiast zgadywać, zgodnie z `AGENTS.md`.
+
+**Version**: 1.0.0 | **Ratified**: 2026-09-23 | **Last Amended**: 2026-09-23
