@@ -87,4 +87,35 @@ describe('harmonogram rat równych', () => {
     expect(zNadplata.raty).toHaveLength(6);
     expect(zNadplata.raty[2]?.rataGr).toBeLessThan(bezNadplaty.raty[2]?.rataGr ?? 0);
   });
+
+  it('utrzymuje ratę po nadpłacie skracającej okres bez zmiany stopy', () => {
+    const wynik = policzHarmonogram({
+      ...parametryKontrolne,
+      liczbaRat: 6,
+      wskaznik: 'WIBOR_3M',
+      stopaWskaznika: undefined,
+      pierwszaRata: '2024-07-01',
+      nadplaty: [{ miesiac: 1, kwotaGr: 1_000_000, tryb: 'skroc_okres' }],
+    });
+
+    expect(wynik.raty[3]?.rataGr).toBe(wynik.raty[2]?.rataGr);
+  });
+
+  it('sumuje nadpłaty przypadające na ten sam miesiąc', () => {
+    const dwieNadplaty = policzHarmonogram({
+      ...parametryKontrolne,
+      liczbaRat: 6,
+      nadplaty: [
+        { miesiac: 2, kwotaGr: 600_000, tryb: 'obniz_rate' },
+        { miesiac: 2, kwotaGr: 400_000, tryb: 'obniz_rate' },
+      ],
+    });
+    const jednaNadplata = policzHarmonogram({
+      ...parametryKontrolne,
+      liczbaRat: 6,
+      nadplaty: [{ miesiac: 2, kwotaGr: 1_000_000, tryb: 'obniz_rate' }],
+    });
+
+    expect(dwieNadplaty.raty[1]?.saldoPoGr).toBe(jednaNadplata.raty[1]?.saldoPoGr);
+  });
 });

@@ -81,16 +81,20 @@ export function policzHarmonogram(parametry: ParametryKredytu): WynikHarmonogram
     const aktualizujStope = parametry.stopaWskaznika !== undefined
       ? numer === 1
       : parametry.wskaznik === 'POLSTR_1M' || numer === 1 || (numer - 1) % 3 === 0;
-    if (aktualizujStope || poprzedniaStopaRoczna === undefined) {
-      poprzedniaStopaRoczna = parametry.stopaWskaznika === undefined
-        ? oprocentowanieOkresu(parametry.wskaznik, parametry.marza, data)
-        : parametry.stopaWskaznika + parametry.marza;
+    const nowaStopaRoczna = parametry.stopaWskaznika === undefined
+      ? oprocentowanieOkresu(parametry.wskaznik, parametry.marza, data)
+      : parametry.stopaWskaznika + parametry.marza;
+    const stopaZmienilaSie = poprzedniaStopaRoczna === undefined
+      || (aktualizujStope && poprzedniaStopaRoczna !== nowaStopaRoczna);
+    if (aktualizujStope && stopaZmienilaSie) {
+      poprzedniaStopaRoczna = nowaStopaRoczna;
     }
+    if (poprzedniaStopaRoczna === undefined) poprzedniaStopaRoczna = nowaStopaRoczna;
     const stopaMiesieczna = poprzedniaStopaRoczna / 12;
     const odsetkiGr = Math.round(saldoGr * stopaMiesieczna);
     const pozostaleRaty = parametry.liczbaRat - numer + 1;
     const rataWyliczonaGr = rataAnnuitetowa(saldoGr, pozostaleRaty, stopaMiesieczna);
-    if (parametry.typRat === 'rowne' && (aktualizujStope || rataBiezacaGr === undefined)) {
+    if (parametry.typRat === 'rowne' && (stopaZmienilaSie || rataBiezacaGr === undefined)) {
       rataBiezacaGr = Math.round(rataWyliczonaGr);
     }
     const rataGr = parametry.typRat === 'malejace'
@@ -105,14 +109,16 @@ export function policzHarmonogram(parametry: ParametryKredytu): WynikHarmonogram
     let rataZNadplataGr = kapitalGr + odsetkiGr;
     saldoGr -= kapitalGr;
 
-    const nadplata = parametry.nadplaty?.find((kandydat) => kandydat.miesiac === numer);
+    const nadplatyWOkresie = parametry.nadplaty?.filter((kandydat) => kandydat.miesiac === numer) ?? [];
+    const nadplataKwotaGr = nadplatyWOkresie.reduce((suma, nadplata) => suma + nadplata.kwotaGr, 0);
+    const nadplata = nadplatyWOkresie[0];
     if (nadplata) {
-      if (!Number.isInteger(nadplata.kwotaGr) || nadplata.kwotaGr <= 0 || nadplata.kwotaGr > saldoGr) {
+      if (!Number.isInteger(nadplataKwotaGr) || nadplataKwotaGr <= 0 || nadplataKwotaGr > saldoGr) {
         throw new Error(`nadplata w miesiącu ${numer} przekracza saldo`);
       }
-      saldoGr -= nadplata.kwotaGr;
-      kapitalZNadplataGr += nadplata.kwotaGr;
-      rataZNadplataGr += nadplata.kwotaGr;
+      saldoGr -= nadplataKwotaGr;
+      kapitalZNadplataGr += nadplataKwotaGr;
+      rataZNadplataGr += nadplataKwotaGr;
     }
 
     sumaOdsetekGr += odsetkiGr;
