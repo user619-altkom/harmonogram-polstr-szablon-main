@@ -176,6 +176,24 @@ same dane.
 
 ---
 
+## Phase 8: Change Request B - Rekompensata za wcześniejszą spłatę (art. 40)
+
+**Goal**: Pokazywać odrębną rekompensatę za każdą nadpłatę przy kredycie ze zmienną stopą,
+bez wpływu na saldo, kapitał ani ratę.
+
+- [X] T026 Napisać czerwone testy `test.each` dla trzech przypadków z karty CR-B, granicy
+  36/37 miesiąca oraz kontroli harmonogramu z nadpłatą 50 000 zł w 13. miesiącu.
+- [X] T027 Dodać w `src/domena/harmonogram.ts` czystą funkcję `rekompensataArt40` oraz pola
+  `rekompensataGr` i `sumaRekompensatGr`; liczyć opłatę niezależnie dla każdej nadpłaty.
+- [X] T028 Rozszerzyć serializację API i kontrakt o `rekompensata` oraz `sumaRekompensat`.
+- [X] T029 Dodać rekompensatę jako osobną kolumnę tabeli, pozycję podsumowania i kolumnę CSV
+  w `app/page.tsx`.
+- [X] T030 Uzupełnić README o zakres CR-B i wyłączenie kredytów o okresowo stałej stopie.
+- [X] T031 Uruchomić pełną walidację `npm test`, `npm run typecheck`, `npm run build` oraz
+  wykonać review PR pod kątem granicy 36/37 miesiąca i braku wpływu na saldo.
+
+---
+
 ## Final Phase: Polish & Cross-Cutting Concerns
 
 - [ ] T024 [P] Uruchomić `npm test`, `npm run typecheck` i `npm run build` — wszystkie MUSZĄ przejść

@@ -8,8 +8,10 @@ export function serializujWynik(harmonogram: WynikHarmonogramu) {
       kapital: wiersz.kapitalGr / 100,
       odsetki: wiersz.odsetkiGr / 100,
       rata: wiersz.rataGr / 100,
+      rekompensata: wiersz.rekompensataGr / 100,
       saldoPo: wiersz.saldoPoGr / 100,
     })),
     sumaOdsetek: harmonogram.sumaOdsetekGr / 100,
+    sumaRekompensat: harmonogram.sumaRekompensatGr / 100,
   };
 }
