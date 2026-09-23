@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { policzHarmonogram, type ParametryKredytu } from '../../../src/domena/harmonogram';
+import { policzHarmonogram, type Nadplata, type ParametryKredytu } from '../../../src/domena/harmonogram';
+import { serializujWynik } from './serializuj';
 
 // Route handler jest cienki: parsuje parametry z query string, woła domenę, zwraca JSON.
 // Żadnych obliczeń finansowych w tym pliku. Przeliczenie jednostek wejścia
@@ -23,6 +24,34 @@ function parsujParametry(szukane: URLSearchParams): ParametryKredytu | string {
   if (typRat !== 'rowne' && typRat !== 'malejace') return 'typRat: rowne albo malejace';
   if (!/^\d{4}-\d{2}-\d{2}$/.test(pierwszaRata)) return 'pierwszaRata: data YYYY-MM-DD';
 
+  const tekstNadplat = szukane.get('nadplaty');
+  let nadplaty: Nadplata[] | undefined;
+  if (tekstNadplat) {
+    try {
+      const wartosc: unknown = JSON.parse(tekstNadplat);
+      if (!Array.isArray(wartosc)) return 'nadplaty: tablica obiektów';
+      nadplaty = [];
+      for (const element of wartosc) {
+        if (!element || typeof element !== 'object') return 'nadplaty: niepoprawny obiekt';
+        const dane = element as { miesiac?: unknown; kwota?: unknown; tryb?: unknown };
+        const miesiac = dane.miesiac;
+        const kwota = dane.kwota;
+        if (typeof miesiac !== 'number' || !Number.isInteger(miesiac) || miesiac < 1 || miesiac > liczbaRat) {
+          return `nadplaty: miesiąc musi być liczbą całkowitą od 1 do ${liczbaRat}`;
+        }
+        if (typeof kwota !== 'number' || !Number.isFinite(kwota) || kwota <= 0) {
+          return 'nadplaty: kwota musi być dodatnią liczbą w złotych';
+        }
+        if (dane.tryb !== 'obniz_rate' && dane.tryb !== 'skroc_okres') {
+          return 'nadplaty: tryb musi być obniz_rate albo skroc_okres';
+        }
+        nadplaty.push({ miesiac, kwotaGr: Math.round(kwota * 100), tryb: dane.tryb });
+      }
+    } catch {
+      return 'nadplaty: niepoprawny JSON';
+    }
+  }
+
   return {
     kwotaGr: Math.round(kwota * 100),
     liczbaRat,
@@ -30,6 +59,7 @@ function parsujParametry(szukane: URLSearchParams): ParametryKredytu | string {
     wskaznik,
     typRat,
     pierwszaRata,
+    nadplaty,
   };
 }
 
@@ -41,17 +71,7 @@ export function GET(request: Request) {
 
   try {
     const harmonogram = policzHarmonogram(parametry);
-    return NextResponse.json({
-      raty: harmonogram.raty.map((wiersz) => ({
-        numer: wiersz.numer,
-        data: wiersz.data,
-        kapital: wiersz.kapitalGr / 100,
-        odsetki: wiersz.odsetkiGr / 100,
-        rata: wiersz.rataGr / 100,
-        saldoPo: wiersz.saldoPoGr / 100,
-      })),
-      sumaOdsetek: harmonogram.sumaOdsetekGr / 100,
-    });
+    return NextResponse.json(serializujWynik(harmonogram));
   } catch (blad) {
     const komunikat = blad instanceof Error ? blad.message : String(blad);
     if (komunikat.startsWith('nie zaimplementowano')) {

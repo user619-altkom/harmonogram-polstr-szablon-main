@@ -54,4 +54,37 @@ describe('harmonogram rat równych', () => {
     expect(oprocentowanieOkresu('POLSTR_1M', 0.01, '2026-06-30', seria)).toBeCloseTo(0.045, 8);
     expect(oprocentowanieOkresu('POLSTR_1M', 0.01, '2026-08-01', seria)).toBeCloseTo(0.05, 8);
   });
+
+  it('aktualizuje oprocentowanie POLSTR w kolejnych okresach', () => {
+    const wynik = policzHarmonogram({
+      ...parametryKontrolne,
+      kwotaGr: 1_000_000,
+      liczbaRat: 2,
+      pierwszaRata: '2025-07-01',
+      stopaWskaznika: undefined,
+      marza: 0,
+    });
+
+    const saldoPoPierwszej = wynik.raty[0]?.saldoPoGr ?? 0;
+    expect(wynik.raty[1]?.odsetkiGr).toBe(Math.round(saldoPoPierwszej * 0.0478 / 12));
+  });
+
+  it('obsługuje raty malejące', () => {
+    const wynik = policzHarmonogram({ ...parametryKontrolne, liczbaRat: 4, typRat: 'malejace' });
+
+    expect(wynik.raty.slice(0, 3).map((wiersz) => wiersz.kapitalGr)).toEqual([10000000, 10000000, 10000000]);
+    expect(wynik.raty[0]?.rataGr).toBeGreaterThan(wynik.raty[1]?.rataGr ?? 0);
+  });
+
+  it('zmniejsza kolejne raty po nadpłacie obniżającej ratę', () => {
+    const bezNadplaty = policzHarmonogram({ ...parametryKontrolne, liczbaRat: 6 });
+    const zNadplata = policzHarmonogram({
+      ...parametryKontrolne,
+      liczbaRat: 6,
+      nadplaty: [{ miesiac: 2, kwotaGr: 1_000_000, tryb: 'obniz_rate' }],
+    });
+
+    expect(zNadplata.raty).toHaveLength(6);
+    expect(zNadplata.raty[2]?.rataGr).toBeLessThan(bezNadplaty.raty[2]?.rataGr ?? 0);
+  });
 });

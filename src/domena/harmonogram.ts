@@ -12,6 +12,13 @@ export interface ParametryKredytu {
   pierwszaRata: string;
   /** Opcjonalna stała stopa używana w teście liczby kontrolnej. */
   stopaWskaznika?: number;
+  nadplaty?: Nadplata[];
+}
+
+export interface Nadplata {
+  miesiac: number;
+  kwotaGr: number;
+  tryb: 'obniz_rate' | 'skroc_okres';
 }
 
 export interface WierszHarmonogramu {
@@ -51,6 +58,11 @@ function dodajMiesiac(data: string, liczbaMiesiecy: number): string {
   return dataUTC.toISOString().slice(0, 10);
 }
 
+function rataAnnuitetowa(saldoGr: number, liczbaRat: number, stopaMiesieczna: number): number {
+  if (stopaMiesieczna === 0) return saldoGr / liczbaRat;
+  return saldoGr * stopaMiesieczna / (1 - (1 + stopaMiesieczna) ** -liczbaRat);
+}
+
 export function policzHarmonogram(parametry: ParametryKredytu): WynikHarmonogramu {
   if (parametry.kwotaGr <= 0 || !Number.isInteger(parametry.kwotaGr)) {
     throw new Error('kwotaGr musi być dodatnią liczbą całkowitą');
@@ -58,37 +70,54 @@ export function policzHarmonogram(parametry: ParametryKredytu): WynikHarmonogram
   if (parametry.liczbaRat <= 0 || !Number.isInteger(parametry.liczbaRat)) {
     throw new Error('liczbaRat musi być dodatnią liczbą całkowitą');
   }
-  if (parametry.typRat !== 'rowne') {
-    throw new Error('obsługiwane są obecnie tylko raty równe');
-  }
-
   const raty: WierszHarmonogramu[] = [];
   let saldoGr = parametry.kwotaGr;
   let sumaOdsetekGr = 0;
-  const stopaRoczna = parametry.stopaWskaznika === undefined
-    ? oprocentowanieOkresu(parametry.wskaznik, parametry.marza, parametry.pierwszaRata)
-    : parametry.stopaWskaznika + parametry.marza;
-  const stopaMiesieczna = stopaRoczna / 12;
-  const rataNominalnaGr = stopaMiesieczna === 0
-    ? parametry.kwotaGr / parametry.liczbaRat
-    : parametry.kwotaGr * stopaMiesieczna
-      / (1 - (1 + stopaMiesieczna) ** -parametry.liczbaRat);
+  let poprzedniaStopaRoczna: number | undefined;
+  let rataBiezacaGr: number | undefined;
 
-  for (let numer = 1; numer <= parametry.liczbaRat; numer += 1) {
+  for (let numer = 1; numer <= parametry.liczbaRat && saldoGr > 0; numer += 1) {
     const data = dodajMiesiac(parametry.pierwszaRata, numer - 1);
-    const rataGr = Math.round(rataNominalnaGr);
-    const odsetkiNominalneGr = saldoGr * stopaMiesieczna;
-    const odsetkiZaokragloneGr = Math.round(odsetkiNominalneGr);
+    const aktualizujStope = parametry.stopaWskaznika !== undefined
+      ? numer === 1
+      : parametry.wskaznik === 'POLSTR_1M' || numer === 1 || (numer - 1) % 3 === 0;
+    if (aktualizujStope || poprzedniaStopaRoczna === undefined) {
+      poprzedniaStopaRoczna = parametry.stopaWskaznika === undefined
+        ? oprocentowanieOkresu(parametry.wskaznik, parametry.marza, data)
+        : parametry.stopaWskaznika + parametry.marza;
+    }
+    const stopaMiesieczna = poprzedniaStopaRoczna / 12;
+    const odsetkiGr = Math.round(saldoGr * stopaMiesieczna);
+    const pozostaleRaty = parametry.liczbaRat - numer + 1;
+    const rataWyliczonaGr = rataAnnuitetowa(saldoGr, pozostaleRaty, stopaMiesieczna);
+    if (parametry.typRat === 'rowne' && (aktualizujStope || rataBiezacaGr === undefined)) {
+      rataBiezacaGr = Math.round(rataWyliczonaGr);
+    }
+    const rataGr = parametry.typRat === 'malejace'
+      ? rataWyliczonaGr
+      : rataBiezacaGr ?? rataWyliczonaGr;
     const kapitalGr = numer === parametry.liczbaRat
       ? saldoGr
-      : rataGr - odsetkiZaokragloneGr;
-    const odsetkiGr = numer === parametry.liczbaRat
-      ? odsetkiZaokragloneGr
-      : rataGr - kapitalGr;
-    const rataKoncowaGr = kapitalGr + odsetkiGr;
+      : parametry.typRat === 'malejace'
+        ? Math.min(saldoGr, Math.floor(parametry.kwotaGr / parametry.liczbaRat))
+        : Math.min(saldoGr, Math.round(rataGr - odsetkiGr));
+    let kapitalZNadplataGr = kapitalGr;
+    let rataZNadplataGr = kapitalGr + odsetkiGr;
     saldoGr -= kapitalGr;
+
+    const nadplata = parametry.nadplaty?.find((kandydat) => kandydat.miesiac === numer);
+    if (nadplata) {
+      if (!Number.isInteger(nadplata.kwotaGr) || nadplata.kwotaGr <= 0 || nadplata.kwotaGr > saldoGr) {
+        throw new Error(`nadplata w miesiącu ${numer} przekracza saldo`);
+      }
+      saldoGr -= nadplata.kwotaGr;
+      kapitalZNadplataGr += nadplata.kwotaGr;
+      rataZNadplataGr += nadplata.kwotaGr;
+    }
+
     sumaOdsetekGr += odsetkiGr;
-    raty.push({ numer, data, kapitalGr, odsetkiGr, rataGr: rataKoncowaGr, saldoPoGr: saldoGr });
+    raty.push({ numer, data, kapitalGr: kapitalZNadplataGr, odsetkiGr, rataGr: rataZNadplataGr, saldoPoGr: saldoGr });
+    if (nadplata && nadplata.tryb !== 'skroc_okres') rataBiezacaGr = undefined;
   }
 
   return { raty, sumaOdsetekGr };
