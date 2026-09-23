@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { policzHarmonogram } from '../src/domena/harmonogram';
+import { oprocentowanieOkresu, policzHarmonogram } from '../src/domena/harmonogram';
 
 const parametryKontrolne = {
   kwotaGr: 40_000_000,
@@ -23,5 +23,18 @@ describe('harmonogram rat równych', () => {
     const wynik = policzHarmonogram(parametryKontrolne);
 
     expect(wynik.raty.reduce((suma, wiersz) => suma + wiersz.kapitalGr, 0)).toBe(40_000_000);
+  });
+
+  it('wybiera stopę z serii dla granic obowiązywania wpisów', () => {
+    const seria = [
+      { od: '2026-01-01', stopa: 0.03 },
+      { od: '2026-04-01', stopa: 0.035 },
+      { od: '2026-07-01', stopa: 0.04 },
+    ];
+
+    expect(oprocentowanieOkresu('POLSTR_1M', 0.01, '2025-12-31', seria)).toBeCloseTo(0.04, 8);
+    expect(oprocentowanieOkresu('POLSTR_1M', 0.01, '2026-04-01', seria)).toBeCloseTo(0.045, 8);
+    expect(oprocentowanieOkresu('POLSTR_1M', 0.01, '2026-06-30', seria)).toBeCloseTo(0.045, 8);
+    expect(oprocentowanieOkresu('POLSTR_1M', 0.01, '2026-08-01', seria)).toBeCloseTo(0.05, 8);
   });
 });
