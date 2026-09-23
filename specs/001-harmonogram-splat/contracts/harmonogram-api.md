@@ -28,15 +28,18 @@ Route handler w `app/api/harmonogram/route.ts`. Parsuje parametry z query string
       "kapital": 833.33,
       "odsetki": 1886.67,
       "rata": 2494.72,
+      "rekompensata": 0,
       "saldoPo": 399166.67
     }
   ],
-  "sumaOdsetek": 348_301.11
+  "sumaOdsetek": 348_301.11,
+  "sumaRekompensat": 0
 }
 ```
 
 Kwoty w odpowiedzi JSON są w złotych z dwoma miejscami po przecinku (przeliczenie z groszy na złote
 robi route handler przy serializacji, tak jak dziś parsowanie robi przeliczenie odwrotne).
+`rekompensata` jest osobną opłatą za nadpłatę i nie zmienia pól `kapital`, `rata` ani `saldoPo`.
 
 ## Odpowiedź błędu (400)
 

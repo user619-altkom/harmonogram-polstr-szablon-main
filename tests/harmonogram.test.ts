@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { oprocentowanieOkresu, policzHarmonogram } from '../src/domena/harmonogram';
+import { oprocentowanieOkresu, policzHarmonogram, rekompensataArt40 } from '../src/domena/harmonogram';
 
 const parametryKontrolne = {
   kwotaGr: 40_000_000,
@@ -117,5 +117,48 @@ describe('harmonogram rat równych', () => {
     });
 
     expect(dwieNadplaty.raty[1]?.saldoPoGr).toBe(jednaNadplata.raty[1]?.saldoPoGr);
+  });
+});
+
+describe('rekompensata za wcześniejszą spłatę z art. 40', () => {
+  it.each([
+    { kwotaGr: 5_000_000, miesiac: 1, stopa: 0.06, oczekiwaneGr: 150_000 },
+    { kwotaGr: 2_000_000, miesiac: 40, stopa: 0.06, oczekiwaneGr: 0 },
+    { kwotaGr: 1_000_000, miesiac: 5, stopa: 0.02, oczekiwaneGr: 20_000 },
+  ])('liczy rekompensatę dla $kwotaGr gr w miesiącu $miesiac', ({ kwotaGr, miesiac, stopa, oczekiwaneGr }) => {
+    expect(rekompensataArt40(kwotaGr, miesiac, stopa)).toBe(oczekiwaneGr);
+  });
+
+  it.each([
+    { miesiac: 36, oczekiwaneGr: 150_000 },
+    { miesiac: 37, oczekiwaneGr: 0 },
+  ])('stosuje granicę 36. miesiąca dla miesiąca $miesiac', ({ miesiac, oczekiwaneGr }) => {
+    expect(rekompensataArt40(5_000_000, miesiac, 0.06)).toBe(oczekiwaneGr);
+  });
+
+  it('pokazuje rekompensatę w harmonogramie bez zmiany salda', () => {
+    const bezRekompensaty = policzHarmonogram({
+      ...parametryKontrolne,
+      kwotaGr: 30_000_000,
+      liczbaRat: 240,
+      stopaWskaznika: 0.0666,
+      marza: 0,
+    });
+    const zRekompensata = policzHarmonogram({
+      ...parametryKontrolne,
+      kwotaGr: 30_000_000,
+      liczbaRat: 240,
+      stopaWskaznika: 0.0666,
+      marza: 0,
+      nadplaty: [{ miesiac: 13, kwotaGr: 5_000_000, tryb: 'obniz_rate' }],
+    });
+
+    const wierszBezNadplaty = bezRekompensaty.raty[12];
+    if (!wierszBezNadplaty) throw new Error('brak 13. raty w harmonogramie kontrolnym');
+    expect(zRekompensata.raty[12]?.rekompensataGr).toBe(150_000);
+    expect(zRekompensata.sumaRekompensatGr).toBe(150_000);
+    expect(zRekompensata.raty[12]?.saldoPoGr).toBe(wierszBezNadplaty.saldoPoGr - 5_000_000);
+    expect(zRekompensata.raty.reduce((suma, wiersz) => suma + wiersz.kapitalGr, 0)).toBe(30_000_000);
+    expect(bezRekompensaty.raty.reduce((suma, wiersz) => suma + wiersz.kapitalGr, 0)).toBe(30_000_000);
   });
 });

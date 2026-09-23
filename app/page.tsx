@@ -19,12 +19,14 @@ type Rata = {
   kapital: number;
   odsetki: number;
   rata: number;
+  rekompensata: number;
   saldoPo: number;
 };
 
 type Wynik = {
   raty: Rata[];
   sumaOdsetek: number;
+  sumaRekompensat: number;
 };
 
 // Krój „Plus Jakarta Sans” najlepiej załadować w layoutcie (np. next/font/google).
@@ -333,9 +335,9 @@ export default function Strona() {
 
   function eksportujCsv() {
     if (!wynik) return;
-    const naglowki = ['Nr', 'Data', 'Kapitał', 'Odsetki', 'Rata', 'Saldo po spłacie'];
+    const naglowki = ['Nr', 'Data', 'Kapitał', 'Odsetki', 'Rata', 'Rekompensata', 'Saldo po spłacie'];
     const wiersze = wynik.raty.map((r) =>
-      [r.numer, formatData(r.data), kwotaCsv(r.kapital), kwotaCsv(r.odsetki), kwotaCsv(r.rata), kwotaCsv(r.saldoPo)]
+      [r.numer, formatData(r.data), kwotaCsv(r.kapital), kwotaCsv(r.odsetki), kwotaCsv(r.rata), kwotaCsv(r.rekompensata), kwotaCsv(r.saldoPo)]
         .map(poleCsv)
         .join(';'),
     );
@@ -599,7 +601,7 @@ export default function Strona() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               <Kafelek
                 wyrozniony
                 tytul="Pierwsza rata"
@@ -626,11 +628,16 @@ export default function Strona() {
                   </div>
                 )}
               </Kafelek>
+              <Kafelek
+                tytul="Suma rekompensat"
+                wartosc={formatKwota(wynik.sumaRekompensat)}
+                opis="Opłaty za nadpłaty w pierwszych 36 miesiącach"
+              />
             </div>
 
             <div className="overflow-hidden rounded-[20px] border border-[#e7e9ef] bg-white">
               <div className="max-h-[70vh] overflow-auto">
-                <table className="w-full min-w-[680px] border-collapse text-sm tabular-nums">
+                <table className="w-full min-w-[820px] border-collapse text-sm tabular-nums">
                   <thead className="sticky top-0 z-10">
                     <tr>
                       <th scope="col" className={th + ' pl-6 text-left'}>Nr</th>
@@ -638,6 +645,7 @@ export default function Strona() {
                       <th scope="col" className={th + ' text-right'}>Kapitał</th>
                       <th scope="col" className={th + ' text-right'}>Odsetki</th>
                       <th scope="col" className={th + ' text-right'}>Rata</th>
+                      <th scope="col" className={th + ' text-right'}>Rekompensata</th>
                       <th scope="col" className={th + ' pr-6 text-right'}>Saldo po spłacie</th>
                     </tr>
                   </thead>
@@ -649,12 +657,13 @@ export default function Strona() {
                         <td className={td + ' text-right text-gray-700'}>{formatKwota(r.kapital)}</td>
                         <td className={td + ' text-right text-gray-700'}>{formatKwota(r.odsetki)}</td>
                         <td className={td + ' text-right font-bold text-gray-900'}>{formatKwota(r.rata)}</td>
+                        <td className={td + ' text-right text-gray-700'}>{formatKwota(r.rekompensata)}</td>
                         <td className={td + ' pr-6 text-right text-gray-700'}>{formatKwota(r.saldoPo)}</td>
                       </tr>
                     ))}
                     {wynik.raty.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                        <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                           Brak rat w harmonogramie.
                         </td>
                       </tr>

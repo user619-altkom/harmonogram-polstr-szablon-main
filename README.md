@@ -139,6 +139,12 @@ Copilot code review czyta `.github/copilot-instructions.md`, `.github/instructio
 
 Produkcja działa na Vercel i buduje się z GitHuba tym samym `npm run build`, który uruchamia workflow Actions. Push do `main` to nowa wersja produkcyjna, każdy PR ma własny adres podglądu w komentarzu bota Vercel. Kroki i zasada awaryjna w [KARTA.md](KARTA.md).
 
+## Rekompensata za wcześniejszą spłatę
+
+Dla kredytów ze zmienną stopą kalkulator pokazuje rekompensatę za każdą nadpłatę zgodnie z art. 40 ustawy o kredycie hipotecznym. Opłata jest prezentowana osobno i nie pomniejsza salda, kapitału ani raty. Może być naliczona wyłącznie w miesiącach 1–36 umowy i jest ograniczona do minimum z 3% nadpłaty oraz odsetek od tej kwoty za rok.
+
+Kredyty o okresowo stałej stopie, objęte odmiennymi ograniczeniami z art. 40 ust. 5, pozostają poza zakresem tej zmiany.
+
 ## Licencja
 
 MIT, szczegóły w [LICENSE](LICENSE).

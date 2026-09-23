@@ -27,12 +27,14 @@ export interface WierszHarmonogramu {
   kapitalGr: number;
   odsetkiGr: number;
   rataGr: number;
+  rekompensataGr: number;
   saldoPoGr: number;
 }
 
 export interface WynikHarmonogramu {
   raty: WierszHarmonogramu[];
   sumaOdsetekGr: number;
+  sumaRekompensatGr: number;
 }
 
 export function oprocentowanieOkresu(
@@ -63,6 +65,11 @@ function rataAnnuitetowa(saldoGr: number, liczbaRat: number, stopaMiesieczna: nu
   return saldoGr * stopaMiesieczna / (1 - (1 + stopaMiesieczna) ** -liczbaRat);
 }
 
+export function rekompensataArt40(kwotaGr: number, miesiac: number, stopaRoczna: number): number {
+  if (miesiac > 36) return 0;
+  return Math.round(Math.min(kwotaGr * 0.03, kwotaGr * stopaRoczna));
+}
+
 export function policzHarmonogram(parametry: ParametryKredytu): WynikHarmonogramu {
   if (parametry.kwotaGr <= 0 || !Number.isInteger(parametry.kwotaGr)) {
     throw new Error('kwotaGr musi być dodatnią liczbą całkowitą');
@@ -73,6 +80,7 @@ export function policzHarmonogram(parametry: ParametryKredytu): WynikHarmonogram
   const raty: WierszHarmonogramu[] = [];
   let saldoGr = parametry.kwotaGr;
   let sumaOdsetekGr = 0;
+  let sumaRekompensatGr = 0;
   let poprzedniaStopaRoczna: number | undefined;
   let rataBiezacaGr: number | undefined;
 
@@ -112,6 +120,10 @@ export function policzHarmonogram(parametry: ParametryKredytu): WynikHarmonogram
     const nadplatyWOkresie = parametry.nadplaty?.filter((kandydat) => kandydat.miesiac === numer) ?? [];
     const nadplataKwotaGr = nadplatyWOkresie.reduce((suma, nadplata) => suma + nadplata.kwotaGr, 0);
     const nadplata = nadplatyWOkresie[0];
+    const rekompensataWOkresieGr = nadplatyWOkresie.reduce(
+      (suma, nadplataWOkresie) => suma + rekompensataArt40(nadplataWOkresie.kwotaGr, numer, poprzedniaStopaRoczna ?? nowaStopaRoczna),
+      0,
+    );
     if (nadplata) {
       if (!Number.isInteger(nadplataKwotaGr) || nadplataKwotaGr <= 0 || nadplataKwotaGr > saldoGr) {
         throw new Error(`nadplata w miesiącu ${numer} przekracza saldo`);
@@ -122,9 +134,18 @@ export function policzHarmonogram(parametry: ParametryKredytu): WynikHarmonogram
     }
 
     sumaOdsetekGr += odsetkiGr;
-    raty.push({ numer, data, kapitalGr: kapitalZNadplataGr, odsetkiGr, rataGr: rataZNadplataGr, saldoPoGr: saldoGr });
+    sumaRekompensatGr += rekompensataWOkresieGr;
+    raty.push({
+      numer,
+      data,
+      kapitalGr: kapitalZNadplataGr,
+      odsetkiGr,
+      rataGr: rataZNadplataGr,
+      rekompensataGr: rekompensataWOkresieGr,
+      saldoPoGr: saldoGr,
+    });
     if (nadplata && nadplata.tryb !== 'skroc_okres') rataBiezacaGr = undefined;
   }
 
-  return { raty, sumaOdsetekGr };
+  return { raty, sumaOdsetekGr, sumaRekompensatGr };
 }
