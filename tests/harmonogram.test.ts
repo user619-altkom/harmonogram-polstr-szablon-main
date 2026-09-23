@@ -25,6 +25,23 @@ describe('harmonogram rat równych', () => {
     expect(wynik.raty.reduce((suma, wiersz) => suma + wiersz.kapitalGr, 0)).toBe(40_000_000);
   });
 
+  it('nie pomija lutowej raty dla daty przypadającej na koniec stycznia', () => {
+    const wynik = policzHarmonogram({
+      ...parametryKontrolne,
+      kwotaGr: 1_000_000,
+      liczbaRat: 3,
+      pierwszaRata: '2026-01-31',
+      stopaWskaznika: 0,
+      marza: 0,
+    });
+
+    expect(wynik.raty.map((wiersz) => wiersz.data)).toEqual([
+      '2026-01-31',
+      '2026-02-28',
+      '2026-03-31',
+    ]);
+  });
+
   it('wybiera stopę z serii dla granic obowiązywania wpisów', () => {
     const seria = [
       { od: '2026-01-01', stopa: 0.03 },

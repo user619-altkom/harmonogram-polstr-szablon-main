@@ -43,7 +43,11 @@ export function oprocentowanieOkresu(
 
 function dodajMiesiac(data: string, liczbaMiesiecy: number): string {
   const dataUTC = new Date(`${data}T00:00:00Z`);
-  dataUTC.setUTCMonth(dataUTC.getUTCMonth() + liczbaMiesiecy);
+  const rok = dataUTC.getUTCFullYear();
+  const miesiac = dataUTC.getUTCMonth() + liczbaMiesiecy;
+  const dzien = dataUTC.getUTCDate();
+  const ostatniDzienMiesiaca = new Date(Date.UTC(rok, miesiac + 1, 0)).getUTCDate();
+  dataUTC.setUTCFullYear(rok, miesiac, Math.min(dzien, ostatniDzienMiesiaca));
   return dataUTC.toISOString().slice(0, 10);
 }
 
@@ -72,14 +76,19 @@ export function policzHarmonogram(parametry: ParametryKredytu): WynikHarmonogram
 
   for (let numer = 1; numer <= parametry.liczbaRat; numer += 1) {
     const data = dodajMiesiac(parametry.pierwszaRata, numer - 1);
-    const odsetkiGr = Math.round(saldoGr * stopaMiesieczna);
+    const rataGr = Math.round(rataNominalnaGr);
+    const odsetkiNominalneGr = saldoGr * stopaMiesieczna;
+    const odsetkiZaokragloneGr = Math.round(odsetkiNominalneGr);
     const kapitalGr = numer === parametry.liczbaRat
       ? saldoGr
-      : Math.round(rataNominalnaGr - odsetkiGr);
-    const rataGr = kapitalGr + odsetkiGr;
+      : rataGr - odsetkiZaokragloneGr;
+    const odsetkiGr = numer === parametry.liczbaRat
+      ? odsetkiZaokragloneGr
+      : rataGr - kapitalGr;
+    const rataKoncowaGr = kapitalGr + odsetkiGr;
     saldoGr -= kapitalGr;
     sumaOdsetekGr += odsetkiGr;
-    raty.push({ numer, data, kapitalGr, odsetkiGr, rataGr, saldoPoGr: saldoGr });
+    raty.push({ numer, data, kapitalGr, odsetkiGr, rataGr: rataKoncowaGr, saldoPoGr: saldoGr });
   }
 
   return { raty, sumaOdsetekGr };
